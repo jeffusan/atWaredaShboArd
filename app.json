@@ -1,0 +1,8 @@
+{
+  "name": "atWaredaShboArd",
+  "description": "A dashboard app for atWare",
+  "repository": "https://github.com/jeffusan/atWaredaShboArd",
+  "addons": ["heroku-postgresql:hobby-dev", "papertrail"],
+  "success_url": "/",
+  "keywords": ["play", "scala", "postgresql", "anorm"]
+}
