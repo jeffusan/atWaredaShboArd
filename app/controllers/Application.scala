@@ -1,16 +1,17 @@
 package controllers
 
-import scala.concurrent._
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-
-import play.api._
-import play.api.mvc._
-import play.api.data._
-import play.api.data.Forms._
-import play.api.Play.current
+import play.api.libs.json.Json
+import play.api.mvc.{Action, Controller}
+import models.Weather
 
 object Application extends Controller {
-  	def index = Action {
-		  Ok(views.html.index())
-	}
+
+  def index = Action {
+    Ok(views.html.index())
+  }
+
+  def weatherToday = Action {
+    Ok(Json.toJson(Weather.results(0)))
+  }
+
 }
