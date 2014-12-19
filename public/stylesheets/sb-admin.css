@@ -8,12 +8,12 @@
 
 body {
     margin-top: 100px;
-    background-color: #222;
+    background-color: #DDD;
 }
 
 @media(min-width:768px) {
     body {
-        margin-top: 50px;
+        margin-top: 10px;
     }
 }
 
@@ -24,7 +24,7 @@ body {
 #page-wrapper {
     width: 100%;
     padding: 0;
-    background-color: #fff;
+    background-color: #999;
 }
 
 .huge {
@@ -34,7 +34,7 @@ body {
 
 @media(min-width:768px) {
     #wrapper {
-        padding-left: 225px;
+        padding-left: 115px;
     }
 
     #page-wrapper {
@@ -65,7 +65,7 @@ body {
 .top-nav>.open>a,
 .top-nav>.open>a:hover,
 .top-nav>.open>a:focus {
-    color: #fff;
+    color: #999;
     background-color: #000;
 }
 
