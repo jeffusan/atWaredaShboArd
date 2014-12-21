@@ -1,7 +1,7 @@
 import play.api._
 import play.api.libs.concurrent.Akka
 import akka.actor._
-import actors.actors.WeatherRetriever
+import actors.WeatherRetriever
 
 object Global extends GlobalSettings {
 

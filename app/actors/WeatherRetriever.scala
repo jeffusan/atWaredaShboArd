@@ -1,9 +1,10 @@
 package actors
-package actors
 
 import akka.actor._
 import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeUnit
+import scalaj.http.Http
+import play.api.libs.json._
 
 class WeatherRetriever extends Actor with ActorLogging {
 
@@ -19,7 +20,10 @@ class WeatherRetriever extends Actor with ActorLogging {
 
   def receive = {
     case message:String =>
-      log.info("Message Received by Actor -> {}", message)
+      val weather = Http("http://api.openweathermap.org/data/2.5/weather").param("q", "Yokohama,jp").asString
+      val json: JsValue = Json.parse(weather.body)
+      val maybeName = (json \ "main" \ "temp").asOpt[Double]
+      log.info("Weather: => {}", maybeName)
     case _ => log.info("unknown message")
   }
 }
