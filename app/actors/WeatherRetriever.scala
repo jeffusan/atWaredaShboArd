@@ -23,10 +23,9 @@ class WeatherRetriever extends Actor with ActorLogging {
       val weather = Http("http://api.openweathermap.org/data/2.5/weather").param("q", "Yokohama,jp").asString
       val json: JsValue = Json.parse(weather.body)
       log.info("Json: => {}", json)
-      val maybeName = (json \ "main" \ "temp").asOpt[Double]
-      log.info("Weather: => {}", maybeName.getOrElse(0.00))
-      models.Weather1.create(maybeName.getOrElse(0.00).toString())
+      models.Weather1.create(json)
     case _ => log.info("unknown message")
   }
+
 
 }

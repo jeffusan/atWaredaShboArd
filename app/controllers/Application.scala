@@ -10,7 +10,10 @@ object Application extends Controller {
 
   implicit val weatherWrites: Writes[Weather] = (
     (JsPath \ "id").write[Int] and
-      (JsPath \ "temp").write[String]
+      (JsPath \ "temperature").write[Double] and
+      (JsPath \ "humidity").write[Int] and
+      (JsPath \ "pressure").write[Int] and
+      (JsPath \ "cloudsPercent").write[Int]
   )(unlift(Weather.unapply))
 
 

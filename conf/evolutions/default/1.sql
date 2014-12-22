@@ -1,4 +1,4 @@
-#---
+#--- !Ups
 
 create table Weather (
         id serial,

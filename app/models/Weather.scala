@@ -4,11 +4,12 @@ import anorm._
 import anorm.SqlParser._
 import play.api.db.DB
 import play.api.Play.current
+import play.api.libs.json._
 
-case class Weather(id: Int, temp: String) {
+case class Weather(id: Int, temperature: Double, humidity: Int, pressure: Int, cloudsPercent: Int) {
 
-  def this(temp: String) = {
-    this(0, temp)
+  def this(temperature: Double, humidity: Int, pressure: Int, cloudsPercent: Int) = {
+    this(0, temperature, humidity, pressure, cloudsPercent)
   }
 }
 
@@ -16,9 +17,12 @@ private object parsers {
 
     val simple = {
     get[Int]("weather.id") ~
-    get[String]("weather.temp") map {
-      case id~temp =>
-        Weather(id, temp)
+      get[Double]("weather.temperature") ~
+      get[Int]("weather.humidity") ~
+      get[Int]("weather.pressure") ~
+      get[Int]("weather.clouds_percent") map {
+      case id~temp~humidity~pressure~cloudsPercent =>
+          Weather(id, temp, humidity, pressure, cloudsPercent)
     }
   }
 
@@ -34,7 +38,7 @@ object Weather1 {
         selectLatest.as(parsers.simple *).head
       } catch {
         case nse: NoSuchElementException =>
-          new Weather(0, "0.00")
+          new Weather(0, 0.00, 0, 0, 0)
       }
 
     }
@@ -44,7 +48,7 @@ object Weather1 {
     DB.withConnection { implicit c =>
       SQL("""
           select
-            temp
+            id, temperature, humidity, pressure, clouds_percent
           from weather
             order by id
       """.stripMargin)
@@ -52,10 +56,20 @@ object Weather1 {
     }
   }
 
-  def create(temp: String) {
+  def create(json: JsValue) {
     DB.withTransaction { implicit c =>
-      SQL("insert into weather (temp) values ({temp})")
-      .on('temp -> temp).executeUpdate()
+      SQL("""
+        insert into weather (temperature, create_dt, humidity, pressure, wind_speed, wind_degree, clouds_percent)
+        values ({temperature}, {create_dt}, {humidity}, {pressure}, {wind_speed}, {wind_degree}, {clouds_percent})
+      """)
+        .on('temperature -> (json \ "main" \ "temp").asOpt[Double].getOrElse(0.00),
+          'create_dt -> (json \ "dt").asOpt[Int].getOrElse(0),
+          'humidity -> (json \ "main" \ "humidity").asOpt[Int].getOrElse(0),
+          'pressure -> (json \ "main" \ "pressure").asOpt[Int].getOrElse(0),
+          'wind_speed -> (json \ "wind" \ "speed").asOpt[Double].getOrElse(0.0),
+          'wind_degree -> (json \ "wind" \ "deg").asOpt[Int].getOrElse(0),
+          'clouds_percent -> (json \ "clouds" \ "all" ).asOpt[Int].getOrElse(0))
+          .executeUpdate()
     }
   }
 
