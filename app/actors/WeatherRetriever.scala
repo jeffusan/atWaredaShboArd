@@ -5,6 +5,8 @@ import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeUnit
 import scalaj.http.Http
 import play.api.libs.json._
+import play.api.db.DB
+import anorm._
 
 class WeatherRetriever extends Actor with ActorLogging {
 
@@ -24,6 +26,17 @@ class WeatherRetriever extends Actor with ActorLogging {
       val json: JsValue = Json.parse(weather.body)
       val maybeName = (json \ "main" \ "temp").asOpt[Double]
       log.info("Weather: => {}", maybeName)
+      insertWeather
     case _ => log.info("unknown message")
   }
+
+  def insertWeather() {
+    import play.api.Play.current
+      DB.withConnection { implicit c =>
+        SQL("insert into weather(temp) values ({temp})").on(
+          'temp -> "25"
+        ).executeInsert()
+      }
+  }
+
 }

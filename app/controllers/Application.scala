@@ -1,8 +1,8 @@
 package controllers
 
-import play.api.libs.json.Json
 import play.api.mvc.{Action, Controller}
 import models.Weather
+import play.api.libs.json.Json
 
 object Application extends Controller {
 
@@ -11,7 +11,7 @@ object Application extends Controller {
   }
 
   def weatherToday = Action {
-    Ok(Json.toJson(Weather.results(0)))
+    Ok(Json.toJson(Weather.latest))
   }
 
 }
