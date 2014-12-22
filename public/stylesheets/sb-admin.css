@@ -34,11 +34,8 @@ body {
 
 @media(min-width:768px) {
     #wrapper {
-        padding-left: 115px;
-    }
-
-    #page-wrapper {
-        padding: 10px;
+        padding-left: 85px;
+        padding-right: 85px;
     }
 }
 
