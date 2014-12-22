@@ -5,21 +5,58 @@ import anorm.SqlParser._
 import play.api.db.DB
 import play.api.Play.current
 
-case class Weather(id: Id[Int], temp: String)
+case class Weather(id: Int, temp: String) {
 
-object Weather {
+  def this(temp: String) = {
+    this(0, temp)
+  }
+}
 
-  val simple = {
-    get[Int]("Weather.id") ~
-    get[String]("Weather.temp") map {
-      case id~temp => Map("id" -> id.toString, "temp" -> temp.toString)
+private object parsers {
+
+    val simple = {
+    get[Int]("weather.id") ~
+    get[String]("weather.temp") map {
+      case id~temp =>
+        Weather(id, temp)
     }
   }
 
+}
+
+object Weather1 {
+
   val selectLatest = SQL("select * from weather order by id desc limit 1")
 
-  val latest = DB.withConnection{ implicit c =>
-    selectLatest.as(Weather.simple *).head
+  def latest(): Weather = {
+    DB.withConnection{ implicit c =>
+      try {
+        selectLatest.as(parsers.simple *).head
+      } catch {
+        case nse: NoSuchElementException =>
+          new Weather(0, "0.00")
+      }
+
+    }
+  }
+
+  def list(): Seq[Weather] = {
+    DB.withConnection { implicit c =>
+      SQL("""
+          select
+            temp
+          from weather
+            order by id
+      """.stripMargin)
+      .as(parsers.simple *)
+    }
+  }
+
+  def create(temp: String) {
+    DB.withTransaction { implicit c =>
+      SQL("insert into weather (temp) values ({temp})")
+      .on('temp -> temp).executeUpdate()
+    }
   }
 
 }
