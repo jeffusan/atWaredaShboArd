@@ -6,25 +6,36 @@ import play.api.db.DB
 import play.api.Play.current
 import play.api.libs.json._
 import java.util.Date
+import play.api.Logger
+import org.postgresql.util.PGobject
 
-case class Weather(id: Int, temperature: Double, humidity: Int, pressure: Int, cloudsPercent: Int, created: Date) {
+case class Weather(id: Int, created: Date, json: String) {
 
-  def this(temperature: Double, humidity: Int, pressure: Int, cloudsPercent: Int, created: Date) = {
-    this(0, temperature, humidity, pressure, cloudsPercent, created)
+  def this(created: Date, json: String) = {
+    this(0, created, json)
   }
 }
 
 private object parsers {
 
-    val simple = {
+  val simple = {
     get[Int]("weather.id") ~
-      get[Double]("weather.temperature") ~
-      get[Int]("weather.humidity") ~
-      get[Int]("weather.pressure") ~
-      get[Int]("weather.clouds_percent") ~
-      get[java.util.Date]("weather.create_dt") map {
-      case id~temp~humidity~pressure~cloudsPercent~create_dt =>
-          Weather(id, temp, humidity, pressure, cloudsPercent, create_dt)
+    get[Date]("weather.create_dt") ~
+      get[JsValue]("weather.data") map {
+        case id~create_dt~data =>
+          val jsonTransformer = (__.json.update(__.read[JsObject].map { o =>
+            o ++ Json.obj("dashboard_id" -> id, "dashboard_date" -> create_dt)
+          }))
+          (data.transform(jsonTransformer).getOrElse(Json.parse("{}"))).asInstanceOf[JsValue]
+    }
+  }
+
+  implicit def rowToJsValue: Column[JsValue] = Column.nonNull { (value, meta) =>
+    val MetaDataItem(qualified, nullable, clazz) = meta
+    value match {
+      case pgo: PGobject => Right(Json.parse(pgo.getValue))
+      case _ => Left(TypeDoesNotMatch("Cannot convert " + value + ":" +
+      value.asInstanceOf[AnyRef].getClass + " to JsValue for column " + qualified))
     }
   }
 
@@ -32,26 +43,28 @@ private object parsers {
 
 object Weather1 {
 
-  val selectLatest = SQL("select * from weather order by id desc limit 1")
+  val transformLogger: Logger = Logger("transform")
 
-  def latest(): Weather = {
+  val selectLatest = SQL("select * from weather order by create_dt desc limit 1")
+
+
+
+  def latest(): JsValue = {
     DB.withConnection{ implicit c =>
       try {
         selectLatest.as(parsers.simple *).head
       } catch {
         case nse: NoSuchElementException =>
-          new Weather(0, 0.00, 0, 0, 0, new Date())
+          Json.parse("{}")
       }
 
     }
   }
 
-  def list(): Seq[Weather] = {
+  def list(): Seq[JsValue] = {
     DB.withConnection { implicit c =>
       SQL("""
-          select
-            id, create_dt, temperature, humidity, pressure, clouds_percent
-          from weather
+          select data from weather
             order by create_dt desc
       """.stripMargin)
       .as(parsers.simple *)
@@ -59,17 +72,15 @@ object Weather1 {
   }
 
   def create(json: JsValue) {
+    val pgObject = new PGobject()
+    pgObject.setType("jsonb")
+    pgObject.setValue(Some(json.toString).getOrElse("{}"))
     DB.withTransaction { implicit c =>
       SQL("""
-        insert into weather (temperature, create_dt, humidity, pressure, wind_speed, wind_degree, clouds_percent)
-        values ({temperature}, now(), {humidity}, {pressure}, {wind_speed}, {wind_degree}, {clouds_percent})
+        insert into weather (create_dt, data)
+        values (now(), {data})
       """)
-        .on('temperature -> (json \ "main" \ "temp").asOpt[Double].getOrElse(0.00),
-          'humidity -> (json \ "main" \ "humidity").asOpt[Int].getOrElse(0),
-          'pressure -> (json \ "main" \ "pressure").asOpt[Int].getOrElse(0),
-          'wind_speed -> (json \ "wind" \ "speed").asOpt[Double].getOrElse(0.0),
-          'wind_degree -> (json \ "wind" \ "deg").asOpt[Int].getOrElse(0),
-          'clouds_percent -> (json \ "clouds" \ "all" ).asOpt[Int].getOrElse(0))
+        .on('data -> anorm.Object(pgObject))
           .executeUpdate()
     }
   }

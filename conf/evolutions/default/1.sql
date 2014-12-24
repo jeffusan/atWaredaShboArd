@@ -1,10 +1,14 @@
-#--- !Ups
+# weather schema
 
-create table Weather (
+# --- !Ups
+
+CREATE TABLE weather (
         id serial,
-        temp varchar(20) not null
-        );
+        create_dt timestamp not null,
+        data jsonb);
 
-#--- !Downs
+CREATE index ON weather USING gin(jsonb);
 
-drop table Weather;
+# --- !Downs
+
+DROP TABLE weather;

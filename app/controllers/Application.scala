@@ -9,15 +9,6 @@ import java.util.Date
 
 object Application extends Controller {
 
-  implicit val weatherWrites: Writes[Weather] = (
-    (JsPath \ "id").write[Int] and
-      (JsPath \ "temperature").write[Double] and
-      (JsPath \ "humidity").write[Int] and
-      (JsPath \ "pressure").write[Int] and
-      (JsPath \ "cloudsPercent").write[Int] and
-      (JsPath \ "created").write[Date]
-  )(unlift(Weather.unapply))
-
 
   def index = Action {
     Ok(views.html.index())

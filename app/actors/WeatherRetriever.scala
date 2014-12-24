@@ -11,7 +11,7 @@ class WeatherRetriever extends Actor with ActorLogging {
   import context.dispatcher
   val tick =
     context.system.scheduler.schedule(
-      Duration(2, TimeUnit.MINUTES),
+      Duration(60, TimeUnit.MINUTES),
       Duration(30, TimeUnit.SECONDS),
       self,
       "tick")
