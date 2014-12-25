@@ -19,18 +19,6 @@ case class Weather(id: Int, created: Date, json: String) {
 private object parsers {
 
   val simple = {
-    get[Int]("weather.id") ~
-    get[Date]("weather.create_dt") ~
-      get[JsValue]("weather.data") map {
-        case id~create_dt~data =>
-          val jsonTransformer = (__.json.update(__.read[JsObject].map { o =>
-            o ++ Json.obj("dashboard_id" -> id, "dashboard_date" -> create_dt)
-          }))
-          (data.transform(jsonTransformer).getOrElse(Json.parse("{}"))).asInstanceOf[JsValue]
-    }
-  }
-
-  val history = {
     get[JsValue]("row_to_json") map {
       case row_to_json =>
         row_to_json.asInstanceOf[JsValue]
@@ -52,7 +40,19 @@ object Weather1 {
 
   val transformLogger: Logger = Logger("transform")
 
-  val selectLatest = SQL("select * from weather order by create_dt desc limit 1")
+  val selectLatest = SQL("""
+select row_to_json(row)
+     from (
+     select
+     (data #>> '{main,temp}')::NUMERIC -273 as temperature,
+     data #>> '{main,humidity}' as humidity,
+     data #>> '{main,pressure}' as pressure,
+     data #>> '{clouds,all}' as clouds
+     from weather
+     order by create_dt
+     limit 1) row
+""")
+
   val selectHistory = SQL("""
 select row_to_json(row)
 from(
@@ -65,6 +65,12 @@ from(
   order by create_dt desc
   limit 10)
 row""")
+
+  val create = SQL("""
+        insert into weather (create_dt, data)
+        values (now(), {data})
+      """)
+
 
 
 
@@ -83,7 +89,7 @@ row""")
   def history(): Seq[JsValue] = {
     DB.withConnection { implicit c =>
       try {
-        selectHistory.as(parsers.history *)
+        selectHistory.as(parsers.simple *)
       } catch {
         case nse: NoSuchElementException =>
           Seq(Json.parse("{}"))
@@ -96,12 +102,7 @@ row""")
     pgObject.setType("jsonb")
     pgObject.setValue(Some(json.toString).getOrElse("{}"))
     DB.withTransaction { implicit c =>
-      SQL("""
-        insert into weather (create_dt, data)
-        values (now(), {data})
-      """)
-        .on('data -> anorm.Object(pgObject))
-          .executeUpdate()
+        create.on('data -> anorm.Object(pgObject)).executeUpdate()
     }
   }
 
