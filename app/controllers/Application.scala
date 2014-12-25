@@ -14,16 +14,12 @@ object Application extends Controller {
     Ok(views.html.index())
   }
 
-  def weather = Action {
-    Ok(views.html.weather())
-  }
-
   def weatherToday = Action {
     Ok(Json.toJson(models.Weather1.latest))
   }
 
-  def weatherDetail = Action {
-    Ok(Json.toJson(models.Weather1.list))
+  def weatherHistory = Action {
+    Ok(Json.toJson(models.Weather1.history))
   }
 
 }

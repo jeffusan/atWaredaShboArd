@@ -30,6 +30,13 @@ private object parsers {
     }
   }
 
+  val history = {
+    get[JsValue]("row_to_json") map {
+      case row_to_json =>
+        row_to_json.asInstanceOf[JsValue]
+    }
+  }
+
   implicit def rowToJsValue: Column[JsValue] = Column.nonNull { (value, meta) =>
     val MetaDataItem(qualified, nullable, clazz) = meta
     value match {
@@ -46,6 +53,17 @@ object Weather1 {
   val transformLogger: Logger = Logger("transform")
 
   val selectLatest = SQL("select * from weather order by create_dt desc limit 1")
+  val selectHistory = SQL("""
+select row_to_json(row)
+from(
+  select
+  date_trunc('hour', create_dt) as period,
+  (data #>> '{main,temp}')::NUMERIC - 273 as temperature,
+  data #>> '{main,humidity}' as humidity,
+  data #>> '{main,pressure}' as pressure
+  from weather
+  limit 10)
+row""")
 
 
 
@@ -61,13 +79,14 @@ object Weather1 {
     }
   }
 
-  def list(): Seq[JsValue] = {
+  def history(): Seq[JsValue] = {
     DB.withConnection { implicit c =>
-      SQL("""
-          select data from weather
-            order by create_dt desc
-      """.stripMargin)
-      .as(parsers.simple *)
+      try {
+        selectHistory.as(parsers.history *)
+      } catch {
+        case nse: NoSuchElementException =>
+          Seq(Json.parse("{}"))
+      }
     }
   }
 

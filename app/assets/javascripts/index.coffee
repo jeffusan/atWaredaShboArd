@@ -10,4 +10,5 @@ getWeather = () ->
     $("#weather_moon").append $("<b>").text weather.clouds.all
 
 $ ->
+
   getWeather()

@@ -27,5 +27,4 @@ class WeatherRetriever extends Actor with ActorLogging {
     case _ => log.info("unknown message")
   }
 
-
 }
