@@ -62,6 +62,7 @@ from(
   data #>> '{main,humidity}' as humidity,
   data #>> '{main,pressure}' as pressure
   from weather
+  order by create_dt desc
   limit 10)
 row""")
 
