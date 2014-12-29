@@ -49,7 +49,7 @@ select row_to_json(row)
      data #>> '{main,pressure}' as pressure,
      data #>> '{clouds,all}' as clouds
      from weather
-     order by create_dt
+     order by create_dt desc
      limit 1) row
 """)
 
@@ -70,9 +70,6 @@ row""")
         insert into weather (create_dt, data)
         values (now(), {data})
       """)
-
-
-
 
   def latest(): JsValue = {
     DB.withConnection{ implicit c =>

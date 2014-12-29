@@ -6,14 +6,14 @@ $( document ).ready(function() {
       element: 'morris-area-chart',
       data: data,
       xkey: 'period',
-      ykeys: ['pressure', 'temperature', 'humidity'],
-      labels: ['Pressure', 'Temperature', 'Humidity'],
+      ykeys: ['temperature', 'humidity'],
+      labels: ['Temperature', 'Humidity'],
       pointSize: 2,
       hideOver: 'auto',
       resize: true
     };
 
-    Morris.Area(graph_data);
+    Morris.Line(graph_data);
 
   });
 });

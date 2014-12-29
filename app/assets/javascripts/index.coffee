@@ -9,6 +9,12 @@ getWeather = () ->
     $("#weather_moon").empty()
     $("#weather_moon").append $("<b>").text weather.clouds
 
+getCommits = () ->
+  $.get 'https://api.github.com/repos/jeffusan/atWaredaShboArd/stats/contributors', (data) ->
+    for coll in data
+      $("#collab").append $("<li>").text coll.total
+
 $ ->
 
   getWeather()
+  getCommits()
